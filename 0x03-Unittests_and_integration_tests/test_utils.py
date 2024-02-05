@@ -50,6 +50,7 @@ class TestGetJson(unittest.TestCase):
             test_url: str,
             test_payload: Dict,
             mock_get) -> None:
+        """Test get_json"""
         mock_get.return_value = Mock(json=lambda: test_payload)
 
         response = get_json(test_url)
