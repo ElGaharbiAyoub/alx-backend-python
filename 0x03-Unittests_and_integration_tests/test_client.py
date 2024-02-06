@@ -3,7 +3,7 @@
 Test client module
 """
 import unittest
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock, MagicMock
 from client import GithubOrgClient
 from parameterized import parameterized
 
@@ -36,3 +36,21 @@ class TestGithubOrgClient(unittest.TestCase):
         test_class = GithubOrgClient(org)
         self.assertEqual(test_class._public_repos_url, expected)
         mock_org.assert_called_once_with()
+
+    @patch(
+        'client.get_json',
+        return_value=[{"name": "repo1"}, {"name": "repo2"}])
+    def test_public_repos(self, mock_get_json):
+        with patch.object(
+                GithubOrgClient,
+                '_public_repos_url',
+                new_callable=PropertyMock) as mock_p_r:
+            mock_p_r.return_value = "\
+                https://api.github.com/orgs/org_name/repos"
+
+            github_org_client = GithubOrgClient("org_name")
+            repos = github_org_client.public_repos()
+
+            self.assertEqual(repos, ["repo1", "repo2"])
+            mock_p_r.assert_called_once()
+            mock_get_json.assert_called_once()
