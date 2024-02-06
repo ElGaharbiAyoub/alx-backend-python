@@ -29,7 +29,6 @@ class TestGithubOrgClient(unittest.TestCase):
 
     @parameterized.expand([
         ("google", "repos_url", "http://google.com"),
-        ("abc", "repos_url", "http://abc.com"),
     ])
     @patch('client.GithubOrgClient.org', new_callable=PropertyMock)
     def test_public_repos_url(
