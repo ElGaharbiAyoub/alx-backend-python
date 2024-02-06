@@ -96,12 +96,17 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
         def side_effect(url: str) -> MagicMock:
             """Side effect"""
+            mock_resp = Mock()
             if url == "https://api.github.com/orgs/google":
-                return MockResponse(cls.org_payload, 200)
+                mock_resp.json.return_value = cls.org_payload
+                mock_resp.status_code = 200
             elif url == "https://api.github.com/orgs/google/repos":
-                return MockResponse(cls.repos_payload, 200)
+                mock_resp.json.return_value = cls.repos_payload
+                mock_resp.status_code = 200
             else:
-                return MockResponse(None, 404)
+                mock_resp.json.return_value = None
+                mock_resp.status_code = 404
+            return mock_resp
 
         cls.mock_get.side_effect = side_effect
 
@@ -109,3 +114,15 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
     def tearDownClass(cls) -> None:
         """Tear down class"""
         cls.get_patcher.stop()
+
+    def test_public_repos(self) -> None:
+        """Test public repos"""
+        github_org_client = GithubOrgClient("google")
+        repos = github_org_client.public_repos()
+        self.assertEqual(repos, self.expected_repos)
+
+    def test_public_repos_with_license(self) -> None:
+        """Test public repos with license"""
+        github_org_client = GithubOrgClient("google")
+        repos = github_org_client.public_repos("apache-2.0")
+        self.assertEqual(repos, self.apache2_repos)
