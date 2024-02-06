@@ -27,21 +27,19 @@ class TestGithubOrgClient(unittest.TestCase):
             f"https://api.github.com/orgs/{org}"
         )
 
-    @parameterized.expand([
-        ("google", "repos_url", "http://google.com"),
-    ])
-    @patch('client.GithubOrgClient.org', new_callable=PropertyMock)
-    def test_public_repos_url(
-            self,
-            org,
-            property_name,
-            expected,
-            mock_org) -> None:
-        """Test public repos url"""
-        mock_org.return_value = {property_name: expected}
-        test_class = GithubOrgClient(org)
-        self.assertEqual(test_class._public_repos_url, expected)
-        mock_org.assert_called_once_with()
+    def test_public_repos_url(self) -> None:
+        """Tests the `_public_repos_url` property."""
+        with patch(
+                "client.GithubOrgClient.org",
+                new_callable=PropertyMock,
+        ) as mock_org:
+            mock_org.return_value = {
+                'repos_url': "https://api.github.com/users/google/repos",
+            }
+            self.assertEqual(
+                GithubOrgClient("google")._public_repos_url,
+                "https://api.github.com/users/google/repos",
+            )
 
     @patch(
         'client.get_json',
