@@ -4,9 +4,10 @@ Test client module
 """
 import unittest
 from typing import List, Dict
-from unittest.mock import patch, PropertyMock, MagicMock
+from unittest.mock import patch, PropertyMock, MagicMock, Mock
 from client import GithubOrgClient
-from parameterized import parameterized
+from parameterized import parameterized, parameterized_class
+from fixtures import TEST_PAYLOAD
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -31,7 +32,12 @@ class TestGithubOrgClient(unittest.TestCase):
         ("abc", "repos_url", "http://abc.com"),
     ])
     @patch('client.GithubOrgClient.org', new_callable=PropertyMock)
-    def test_public_repos_url(self, org, property_name, expected, mock_org) -> None:
+    def test_public_repos_url(
+            self,
+            org,
+            property_name,
+            expected,
+            mock_org) -> None:
         """Test public repos url"""
         mock_org.return_value = {property_name: expected}
         test_class = GithubOrgClient(org)
@@ -70,14 +76,36 @@ class TestGithubOrgClient(unittest.TestCase):
         )
 
 
+@parameterized_class([
+   {
+        'org_payload': TEST_PAYLOAD[0][0],
+        'repos_payload': TEST_PAYLOAD[0][1],
+        'expected_repos': TEST_PAYLOAD[0][2],
+        'apache2_repos': TEST_PAYLOAD[0][3],
+    }
+])
 class TestIntegrationGithubOrgClient(unittest.TestCase):
     """
     TestIntegrationGithubOrgClient class
     """
-
-    def setUpClass(self):
+    @classmethod
+    def setUpClass(cls) -> None:
         """Set up class"""
-        self.get_patcher = patch('client.get_json')
-        self.mock_get = self.get_patcher.start()
+        cls.get_patcher = patch('requests.get')
+        cls.mock_get = cls.get_patcher.start()
 
-    
+        def side_effect(url: str) -> MagicMock:
+            """Side effect"""
+            if url == "https://api.github.com/orgs/google":
+                return MockResponse(cls.org_payload, 200)
+            elif url == "https://api.github.com/orgs/google/repos":
+                return MockResponse(cls.repos_payload, 200)
+            else:
+                return MockResponse(None, 404)
+
+        cls.mock_get.side_effect = side_effect
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        """Tear down class"""
+        cls.get_patcher.stop()
